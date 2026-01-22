@@ -142,7 +142,9 @@
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
                                             <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500">{{ item.category }}</span>
-                                            <h3 class="font-bold text-lg text-morandi-dark leading-tight">{{ item.name }}</h3>
+                                            <!-- 航班特殊顯示標題 -->
+                                            <h3 v-if="item.category === '航班'" class="font-bold text-lg text-morandi-dark leading-tight">{{ item.flightStart }} <i class="fa-solid fa-arrow-right text-xs mx-1 opacity-50"></i> {{ item.flightEnd }}</h3>
+                                            <h3 v-else class="font-bold text-lg text-morandi-dark leading-tight">{{ item.name }}</h3>
                                         </div>
                                         
                                         <div class="text-sm text-gray-500 space-y-1 mt-2">
@@ -166,16 +168,19 @@
                                 <div v-if="item.category === '航班'" class="mt-3 pt-3 border-t border-dashed border-gray-200">
                                     <div class="flex justify-between items-center text-morandi-blue">
                                         <div class="text-center">
-                                            <div class="text-2xl font-bold">{{ item.flightStart }}</div>
+                                            <div class="text-2xl font-bold font-sans">{{ item.flightStart }}</div>
                                             <div class="text-xs">{{ item.flightStartTime }}</div>
                                         </div>
-                                        <i class="fa-solid fa-plane text-xl opacity-50"></i>
+                                        <div class="flex flex-col items-center px-4 opacity-50">
+                                            <i class="fa-solid fa-plane text-xl"></i>
+                                            <div class="text-[10px] mt-1">{{ item.flightDuration || '飛行中' }}</div>
+                                        </div>
                                         <div class="text-center">
-                                            <div class="text-2xl font-bold">{{ item.flightEnd }}</div>
+                                            <div class="text-2xl font-bold font-sans">{{ item.flightEnd }}</div>
                                             <div class="text-xs">{{ item.flightEndTime }}</div>
                                         </div>
                                     </div>
-                                    <div class="text-center text-xs text-gray-400 mt-1">{{ item.flightCode }}</div>
+                                    <div class="text-center text-xs text-gray-400 mt-2 font-bold">{{ item.flightCode }}</div>
                                 </div>
                             </div>
                         </div>
@@ -338,12 +343,18 @@
         <!-- 行程 Modal -->
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
             <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative animate-slide-up">
-                <h3 class="text-xl font-bold mb-4">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">{{ isEditing ? '編輯行程' : '新增行程' }}</h3>
+                    <div v-if="modalForm.category === '航班'" class="text-xs bg-blue-100 text-blue-500 px-2 py-1 rounded-lg font-bold">
+                        <i class="fa-solid fa-plane"></i> 航班模式
+                    </div>
+                </div>
                 
-                <div class="space-y-4">
+                <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+                    <!-- 分類 (共用) -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">分類</label>
-                        <select v-model="modalForm.category" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200">
+                        <select v-model="modalForm.category" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 transition-colors focus:border-morandi-blue">
                             <option>景點</option>
                             <option>住宿</option>
                             <option>美食</option>
@@ -352,18 +363,58 @@
                             <option>其他</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1">名稱</label>
-                        <input type="text" v-model="modalForm.name" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="輸入地點名稱">
+
+                    <!-- ===== 航班專屬介面 ===== -->
+                    <div v-if="modalForm.category === '航班'" class="space-y-4 animate-fade-in">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">出發機場 (代號)</label>
+                                <input type="text" v-model="modalForm.flightStart" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 uppercase font-sans font-bold text-center" placeholder="TPE">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">起飛時間</label>
+                                <input type="time" v-model="modalForm.flightStartTime" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 text-center">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center text-morandi-blue opacity-50">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">抵達機場 (代號)</label>
+                                <input type="text" v-model="modalForm.flightEnd" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 uppercase font-sans font-bold text-center" placeholder="KIX">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">抵達時間</label>
+                                <input type="time" v-model="modalForm.flightEndTime" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 text-center">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">航班代號</label>
+                            <input type="text" v-model="modalForm.flightCode" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 uppercase" placeholder="例如: GK50">
+                        </div>
                     </div>
-                    <div v-if="['景點','住宿','美食','購物'].includes(modalForm.category)">
-                        <label class="block text-xs font-bold text-gray-500 mb-1">營業時間</label>
-                        <input type="text" v-model="modalForm.time" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="09:00 - 20:00">
+
+                    <!-- ===== 一般行程介面 (非航班) ===== -->
+                    <div v-else class="space-y-4 animate-fade-in">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">名稱</label>
+                            <input type="text" v-model="modalForm.name" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="輸入地點名稱">
+                        </div>
+                        <div v-if="['景點','住宿','美食','購物'].includes(modalForm.category)">
+                            <label class="block text-xs font-bold text-gray-500 mb-1">營業時間</label>
+                            <input type="text" v-model="modalForm.time" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="09:00 - 20:00">
+                        </div>
+                        <div v-if="modalForm.category === '景點'">
+                            <label class="block text-xs font-bold text-gray-500 mb-1">門票資訊</label>
+                            <input type="text" v-model="modalForm.ticket" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="¥2000 / 無">
+                        </div>
                     </div>
-                    <div v-if="modalForm.category === '景點'">
-                        <label class="block text-xs font-bold text-gray-500 mb-1">門票資訊</label>
-                        <input type="text" v-model="modalForm.ticket" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200" placeholder="¥2000 / 無">
-                    </div>
+
+                    <!-- 備註 (共用) -->
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">特色 & 備註</label>
                         <textarea v-model="modalForm.note" class="w-full bg-gray-50 rounded-xl p-3 outline-none border border-gray-200 h-20"></textarea>
@@ -371,9 +422,9 @@
                 </div>
 
                 <div class="flex gap-3 mt-6">
-                    <button v-if="isEditing" @click="deleteItemConfirm" class="flex-1 py-3 bg-red-100 text-red-500 rounded-xl font-bold">刪除</button>
-                    <button @click="showModal = false" class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold">取消</button>
-                    <button @click="saveItem" class="flex-[2] py-3 bg-morandi-blue text-white rounded-xl font-bold">確認</button>
+                    <button v-if="isEditing" @click="deleteItemConfirm" class="flex-1 py-3 bg-red-100 text-red-500 rounded-xl font-bold hover:bg-red-200 transition-colors">刪除</button>
+                    <button @click="showModal = false" class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors">取消</button>
+                    <button @click="saveItem" class="flex-[2] py-3 bg-morandi-blue text-white rounded-xl font-bold shadow-lg shadow-morandi-blue/30 hover:scale-[1.02] transition-transform">確認</button>
                 </div>
             </div>
         </div>
@@ -464,7 +515,7 @@
                     { id: 'expenses', icon: 'fa-solid fa-yen-sign' }
                 ];
 
-                // 初始資料結構 (若資料庫為空時使用)
+                // 初始資料結構
                 const initialDays = [
                     { date: '2026-01-25', dateNumber: '25', weekday: 'Sun', location: '大阪', items: [] },
                     { date: '2026-01-26', dateNumber: '26', weekday: 'Mon', location: '名古屋', items: [] },
@@ -476,20 +527,18 @@
                     { date: '2026-02-01', dateNumber: '01', weekday: 'Sun', location: '東京', items: [] },
                 ];
                 
-                // 第一天預設資料
                 const day0DefaultItems = [
-                    { id: 101, category: '航班', name: 'TPE - KIX (GK50)', flightStart:'TPE', flightStartTime:'02:30', flightEnd:'KIX', flightEndTime:'06:00', flightCode:'GK50', note: '抵達關西機場' },
-                    { id: 102, category: '航班', name: 'KIX - NRT (GK230)', flightStart:'KIX', flightStartTime:'08:00', flightEnd:'NRT', flightEndTime:'09:25', flightCode:'GK230', note: '轉機前往東京', transportType: 'train', transportTime: '2h 轉機' },
+                    { id: 101, category: '航班', flightStart:'TPE', flightStartTime:'02:30', flightEnd:'KIX', flightEndTime:'06:00', flightCode:'GK50', note: '抵達關西機場' },
+                    { id: 102, category: '航班', flightStart:'KIX', flightStartTime:'08:00', flightEnd:'NRT', flightEndTime:'09:25', flightCode:'GK230', note: '轉機前往東京', transportType: 'train', transportTime: '2h 轉機' },
                     { id: 103, category: '美食', name: '名古屋知名鰻魚飯', time: '12:00', transportType: 'train', transportTime: '1h 30m' },
                     { id: 104, category: '景點', name: '名古屋城', time: '14:00', ticket:'¥500', transportType: 'car', transportTime: '15m' },
                     { id: 105, category: '住宿', name: 'Daiwa Roynet Hotel Nagoya', time: '18:00', transportType: 'walk', transportTime: '10m' }
                 ];
 
-                const itineraryDays = ref(JSON.parse(JSON.stringify(initialDays))); // Deep copy
+                const itineraryDays = ref(JSON.parse(JSON.stringify(initialDays)));
                 const selectedDayIndex = ref(0);
                 const selectedDayData = computed(() => itineraryDays.value[selectedDayIndex.value]);
 
-                // 天氣資料
                 const weatherData = {
                     'Sun': { temp: 8, icon: 'fa-solid fa-sun', desc: '晴朗', feelsLike: 5 },
                     'Mon': { temp: 6, icon: 'fa-solid fa-cloud', desc: '多雲', feelsLike: 4 },
@@ -501,15 +550,12 @@
                 };
                 const currentWeather = computed(() => weatherData[selectedDayData.value.weekday] || weatherData['Sun']);
 
-                // Firestore 資料同步
                 onMounted(() => {
-                    // 1. 監聽每一天的行程
                     initialDays.forEach((dayStruct, index) => {
                         onSnapshot(doc(db, TRIP_COLLECTION, `day_${index}`), (docSnap) => {
                             if (docSnap.exists()) {
                                 itineraryDays.value[index] = docSnap.data();
                             } else {
-                                // 初始化：如果沒有資料，寫入預設值
                                 const dataToSave = { ...dayStruct };
                                 if(index === 0) dataToSave.items = day0DefaultItems;
                                 setDoc(doc(db, TRIP_COLLECTION, `day_${index}`), dataToSave);
@@ -517,13 +563,11 @@
                         });
                     });
 
-                    // 2. 監聽購物清單
                     onSnapshot(doc(db, TRIP_COLLECTION, 'shopping'), (docSnap) => {
                         if (docSnap.exists()) shoppingList.value = docSnap.data().items || [];
                         else setDoc(doc(db, TRIP_COLLECTION, 'shopping'), { items: [] });
                     });
 
-                    // 3. 監聽花費
                     onSnapshot(doc(db, TRIP_COLLECTION, 'expenses'), (docSnap) => {
                         if (docSnap.exists()) expenses.value = docSnap.data().items || [];
                         else setDoc(doc(db, TRIP_COLLECTION, 'expenses'), { items: [] });
@@ -531,16 +575,19 @@
                     });
                 });
 
-                // Helper: 更新單日行程到 Firestore
                 const updateDayDoc = (index) => {
                     setDoc(doc(db, TRIP_COLLECTION, `day_${index}`), itineraryDays.value[index]);
                 };
 
-                // === 行程操作 ===
+                // === Modal Logic ===
                 const showModal = ref(false);
                 const isEditing = ref(false);
                 const editingIndex = ref(-1);
-                const modalForm = reactive({ category: '景點', name: '', time: '', ticket: '', note: '' });
+                // 初始化 Modal 表單，包含所有可能的欄位
+                const modalForm = reactive({ 
+                    category: '景點', name: '', time: '', ticket: '', note: '',
+                    flightStart: '', flightStartTime: '', flightEnd: '', flightEndTime: '', flightCode: ''
+                });
 
                 const openModal = (mode, item = null, index = -1) => {
                     isEditing.value = mode === 'edit';
@@ -548,7 +595,11 @@
                         Object.assign(modalForm, item);
                         editingIndex.value = index;
                     } else {
-                        Object.assign(modalForm, { category: '景點', name: '', time: '', ticket: '', note: '' });
+                        // 重置表單，避免殘留資料
+                        Object.assign(modalForm, { 
+                            category: '景點', name: '', time: '', ticket: '', note: '',
+                            flightStart: '', flightStartTime: '', flightEnd: '', flightEndTime: '', flightCode: ''
+                        });
                     }
                     showModal.value = true;
                 };
@@ -556,6 +607,11 @@
                 const editItem = (item, idx) => openModal('edit', item, idx);
 
                 const saveItem = () => {
+                    // 自動為航班建立 name (雖然主要顯示用專屬欄位，但保持 name 有值是好習慣)
+                    if (modalForm.category === '航班' && !modalForm.name) {
+                        modalForm.name = `${modalForm.flightStart} - ${modalForm.flightEnd}`;
+                    }
+
                     const newItem = { 
                         ...modalForm, 
                         id: isEditing.value ? itineraryDays.value[selectedDayIndex.value].items[editingIndex.value].id : Date.now(),
@@ -568,28 +624,29 @@
                     } else {
                         itineraryDays.value[selectedDayIndex.value].items.push(newItem);
                     }
-                    updateDayDoc(selectedDayIndex.value); // Sync to Cloud
+                    updateDayDoc(selectedDayIndex.value);
                     showModal.value = false;
                 };
 
                 const deleteItemConfirm = () => {
                     if(confirm("確定要刪除這個行程嗎？")) {
                         itineraryDays.value[selectedDayIndex.value].items.splice(editingIndex.value, 1);
-                        updateDayDoc(selectedDayIndex.value); // Sync to Cloud
+                        updateDayDoc(selectedDayIndex.value);
                         showModal.value = false;
                     }
                 };
 
-                // 拖曳排序
+                // Drag & Drop
                 let draggedItemIndex = null;
                 const dragStart = (index) => { draggedItemIndex = index; };
                 const drop = (dropIndex) => {
                     const items = itineraryDays.value[selectedDayIndex.value].items;
                     const itemToMove = items.splice(draggedItemIndex, 1)[0];
                     items.splice(dropIndex, 0, itemToMove);
-                    updateDayDoc(selectedDayIndex.value); // Sync to Cloud
+                    updateDayDoc(selectedDayIndex.value);
                 };
 
+                // Helpers
                 const getCategoryColor = (cat) => {
                     const map = { '景點': 'bg-pink-400', '住宿': 'bg-indigo-400', '美食': 'bg-orange-400', '購物': 'bg-red-400', '航班': 'bg-blue-400', '其他': 'bg-gray-400' };
                     return map[cat] || 'bg-gray-400';
@@ -602,7 +659,7 @@
                     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(keyword)}`, '_blank');
                 };
 
-                // === 資訊 Tab ===
+                // Info Tab
                 const currencyInput = ref('');
                 const convertedCurrency = computed(() => {
                     if(!currencyInput.value) return 0;
@@ -619,7 +676,7 @@
                     { name: 'Richmond Hotel Narita', address: '970 Hanasaki-chou, Narita', period: 'Day 7' }
                 ];
 
-                // === 購物清單 ===
+                // Shopping
                 const shoppingList = ref([]);
                 const showShoppingModal = ref(false);
                 const shoppingForm = reactive({ name: '', image: null });
@@ -635,8 +692,8 @@
                 const addShoppingItem = () => {
                     if(shoppingForm.name) {
                         const newList = [...shoppingList.value, { ...shoppingForm }];
-                        shoppingList.value = newList; // Optimistic update
-                        setDoc(doc(db, TRIP_COLLECTION, 'shopping'), { items: newList }); // Sync
+                        shoppingList.value = newList;
+                        setDoc(doc(db, TRIP_COLLECTION, 'shopping'), { items: newList });
                         shoppingForm.name = ''; shoppingForm.image = null;
                         showShoppingModal.value = false;
                     }
@@ -646,11 +703,11 @@
                         const newList = [...shoppingList.value];
                         newList.splice(idx, 1);
                         shoppingList.value = newList;
-                        setDoc(doc(db, TRIP_COLLECTION, 'shopping'), { items: newList }); // Sync
+                        setDoc(doc(db, TRIP_COLLECTION, 'shopping'), { items: newList });
                     }
                 };
 
-                // === 花費 ===
+                // Expenses
                 const expenses = ref([]);
                 const showExpenseModal = ref(false);
                 const expenseForm = reactive({ category: '飲食', name: '', date: new Date().toISOString().split('T')[0], amount: '', payment: '現金' });
@@ -663,7 +720,7 @@
                     if(expenseForm.name && expenseForm.amount) {
                         const newList = [...expenses.value, { ...expenseForm }];
                         expenses.value = newList;
-                        setDoc(doc(db, TRIP_COLLECTION, 'expenses'), { items: newList }); // Sync
+                        setDoc(doc(db, TRIP_COLLECTION, 'expenses'), { items: newList });
                         expenseForm.name = ''; expenseForm.amount = '';
                         showExpenseModal.value = false;
                     }
